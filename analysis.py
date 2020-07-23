@@ -51,11 +51,15 @@ class FalseNegatives(tf.keras.metrics.Metric):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('name', nargs = '+')
+parser.add_argument('--time_window', type = int, default = 32)
+parser.add_argument('--timesteps', type = int, default = 2000)
 parser.add_argument('--dtype', type = str, default = '')
 parser.add_argument('--tool', type = str, default = '')
 args = parser.parse_args()
 
 name = args.name[0]
+time_window = args.time_window
+timesteps = args.timesteps
 dtype = args.dtype
 tool = args.tool
 
@@ -85,10 +89,10 @@ elif tool != '':
 else:
     pattern = '*.tfrecord'
 
-directory = '/home/dyros/mc_ws/CollisionNet/data/validation'
+directory = '/home/dyros/mc_ws/CollisionNet/data/' + str(time_window) + '/test'
 Paths = Path(directory).glob(pattern)
 paths = [str(path) for path in Paths]
-dataset = ds.OrderedDataset(paths, 49, 32, 100)
+dataset = ds.OrderedDataset(paths, 49, time_window, 100, processed = False)
 result = model.evaluate(dataset, verbose = 0)
 predictions = model.predict(dataset)
 
@@ -117,7 +121,7 @@ for i in range(length):
         start = i
         break
 start = max([(start - 100), 0])
-stop = min([(start + 2000), length])
+stop = min([(start + timesteps), length])
 t = range(start, stop)
 plt.figure(figsize = (15, 4.8))
 plt.plot(t, predictions[start:stop, 0], color = 'b', label = 'prediction')
@@ -129,5 +133,5 @@ plt.ylabel('Collision Probability')
 plt.legend()
 plt.xlim(start, (stop - 1))
 plt.ylim(0, 1.1)
-plt.savefig('/home/dyros/mc_ws/CollisionNet/data_0_00kg/analysis/' + name '.png')
+plt.savefig('/home/dyros/mc_ws/CollisionNet/analysis/' + name + '.png')
 plt.clf()
