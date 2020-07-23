@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-profile', action = 'store_true')
 parser.add_argument('-use_wandb', action = 'store_true')
 parser.add_argument('-use_cpu', action = 'store_false')
-parser.add_argument('--name', type = str, default = 'default')
+parser.add_argument('--name', type = str, default = '')
 parser.add_argument('--learning_rate', type = float, default = 0.001)
 parser.add_argument('--training_epoch', type = int, default = 100)
 parser.add_argument('--num_data', type = int, default = 49)
@@ -110,7 +110,8 @@ start_time = time.time()
 model.fit(x = dataset, epochs = training_epochs, callbacks = callbacks, validation_data = validation_dataset)
 elapsed_time = time.time() - start_time
 
-#model.save('/home/dyros/mc_ws/CollisionNet/model/' + run_name + '.h5')
+if run_name != '':
+    model.save('/home/dyros/mc_ws/CollisionNet/model/' + run_name + '.h5')
 if wandb_use == True:
     model.save(os.path.join(wandb.run.dir, (run_name + '.h5')))
     wandb.config.elapsed_time = elapsed_time

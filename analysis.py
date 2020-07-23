@@ -50,10 +50,12 @@ class FalseNegatives(tf.keras.metrics.Metric):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('name', nargs = '+')
 parser.add_argument('--dtype', type = str, default = '')
 parser.add_argument('--tool', type = str, default = '')
 args = parser.parse_args()
 
+name = args.name[0]
 dtype = args.dtype
 tool = args.tool
 
@@ -65,7 +67,7 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-model = tf.keras.models.load_model(('/home/dyros/mc_ws/CollisionNet/model/0kg_trial5.h5'), compile = False)
+model = tf.keras.models.load_model(('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5'), compile = False)
 model.compile(
     loss = 'categorical_crossentropy', 
     metrics = [
@@ -83,7 +85,7 @@ elif tool != '':
 else:
     pattern = '*.tfrecord'
 
-directory = '/home/dyros/mc_ws/CollisionNet/data_0_00kg/validation'
+directory = '/home/dyros/mc_ws/CollisionNet/data/validation'
 Paths = Path(directory).glob(pattern)
 paths = [str(path) for path in Paths]
 dataset = ds.OrderedDataset(paths, 49, 32, 100)
@@ -109,11 +111,6 @@ print("False negative rate: {:.3}".format(false_negatives / float(positives)))
 JTS = labels[:, 2]
 DOB = labels[:, 3]
 
-if (length != predictions.shape[0]):
-    print('different length')
-    print(length)
-    print(predictions.shape[0])
-
 start = 0
 for i in range(length):
     if y[i] == 1:
@@ -132,5 +129,5 @@ plt.ylabel('Collision Probability')
 plt.legend()
 plt.xlim(start, (stop - 1))
 plt.ylim(0, 1.1)
-plt.savefig('/home/dyros/mc_ws/CollisionNet/data_0_00kg/analysis/val_analysis.png')
+plt.savefig('/home/dyros/mc_ws/CollisionNet/data_0_00kg/analysis/' + name '.png')
 plt.clf()
