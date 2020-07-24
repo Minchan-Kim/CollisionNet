@@ -45,6 +45,7 @@ class CollisionNet:
             tf.keras.metrics.CategoricalCrossentropy(name = 'val_loss'),
             tf.keras.metrics.CategoricalAccuracy(name = 'val_acc')
         ]
+        self.stop_training = False
         self.steps = None
         if (batch_size is not None) and (minibatch_size is not None):
             self.batch_gradients = []
@@ -107,9 +108,12 @@ class CollisionNet:
             if callbacks is not None:
                 logs = dict([(metric.name, metric.result()) for metric in self.metrics])
                 for callback in callbacks:
-                    callback(epoch, logs)
+                    callback(self, epoch, logs)
             for metric in self.metrics:
                 metric.reset_states()
+            if self.stop_training:
+                self.stop_training = False
+                break
 
     def save(self, filepath, overwrite = True, include_optimizer = True, save_format = None):
         self.model.save(filepath, overwrite, include_optimizer, save_format)
