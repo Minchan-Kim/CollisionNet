@@ -32,13 +32,17 @@ def write(data, src, dest, time_window, tools, dtype):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('path', nargs = '?', default = '/home/dyros/mc_ws/CollisionNet/data/test')
+parser.add_argument('path', nargs = '?', default = '/home/dyros/mc_ws/CollisionNet/data/32/test')
+parser.add_argument('--time_window', type = int, default = 32)
 parser.add_argument('--tools', nargs = '*')
 parser.add_argument('--dtype', nargs = '*')
 args = parser.parse_args()
 dest = args.path
+time_window = args.time_window
 tools = args.tools
 dtype = args.dtype
+
+tf.get_logger().setLevel('WARN')
 
 path = Path('/home/dyros/mc_ws/Offline_Experiment')
 paths = list(path.glob('**/DRCL_Data.txt*'))
@@ -48,7 +52,7 @@ if dtype is not None:
     paths = [path for path in paths for dt in dtype if dt in str(path)]
 
 for path in paths:
-    nr.Normalize(path, dest, write, 32, 1000, tools, dtype)
+    nr.Normalize(path, dest, write, time_window, 1000, tools, dtype)
     print(str(path))
 
 """

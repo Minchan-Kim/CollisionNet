@@ -39,17 +39,20 @@ def write(data, src, dest, time_window, tools, dtype):
         writer.write(example_proto.SerializeToString())
     writer.flush()
     writer.close()
-    np.savetxt((filename + '.csv'), data[:, -4:], delimiter = ',')
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('path', nargs = '?', default = '/home/dyros/mc_ws/CollisionNet/data/16/training')
+parser.add_argument('path', nargs = '?', default = '/home/dyros/mc_ws/CollisionNet/data/32/training')
+parser.add_argument('--time_window', type = int, default = 32)
 parser.add_argument('--tools', nargs = '*')
 parser.add_argument('--dtype', nargs = '*')
 args = parser.parse_args()
 dest = args.path
+time_window = args.time_window
 tools = args.tools
 dtype = args.dtype
+
+tf.get_logger().setLevel('WARN')
 
 path = Path('/home/dyros/mc_ws/data')
 paths = list(path.glob('robot*/**/Reduced_DRCL_Data.txt'))
@@ -59,7 +62,7 @@ if dtype is not None:
     paths = [path for path in paths for dt in dtype if dt in str(path)]
 
 for path in paths:
-    nr.Normalize(path, dest, write, 16, 100, tools, dtype)
+    nr.Normalize(path, dest, write, time_window, 100, tools, dtype)
     print(str(path))
 
 """
