@@ -19,7 +19,8 @@ parser.add_argument('--training_epoch', type = int, default = 100)
 parser.add_argument('--num_data', type = int, default = 49)
 parser.add_argument('--time_window', type = int, default = 32)
 parser.add_argument('--buffer_size', type = int, default = 20000)
-parser.add_argument('--batch_size', type = int, default = 50)
+parser.add_argument('--batch_size', type = int, default = 100)
+parser.add_argument('--minibatch_size', type = int, default = 0)
 parser.add_argument('--cycle_length', type = int, default = 8)
 parser.add_argument('--dtype', type = str, default = '')
 parser.add_argument('--tool', type = str, default = '')
@@ -35,6 +36,7 @@ if wandb_use == True:
 learning_rate = args.learning_rate
 training_epochs = args.training_epoch
 batch_size = args.batch_size
+minibatch_size = args.minibatch_size
 buffer_size = args.buffer_size
 num_data = args.num_data
 time_window = args.time_window
@@ -42,7 +44,7 @@ cycle_length = args.cycle_length
 dtype = args.dtype
 tool = args.tool
 
-#VALIDATION_DATA = 16966
+#VALIDATION_DATA = 16965
 #VALIDATION_DATA = 5598
 
 if not tf.__version__.startswith('2'):
@@ -60,8 +62,6 @@ if use_gpu is True:
 else:
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-model = nn.CollisionNet(num_data, time_window, learning_rate)
-
 if wandb_use == True:
     wandb.config.epoch = training_epochs
     wandb.config.learning_rate = learning_rate
@@ -70,6 +70,12 @@ if wandb_use == True:
     wandb.config.num_data = num_data
     wandb.config.time_window = time_window
     wandb.config.cycle_length = cycle_length
+
+if minibatch_size > 0:
+    model = nn.CollisionNet(num_data, time_window, learning_rate, batch_size, minibatch_size)
+    batch_size = minibatch_size
+else:
+    model = nn.CollisionNet(num_data, time_window, learning_rate)
 
 # Training data
 if (dtype != '') and (tool != ''):
@@ -81,8 +87,8 @@ elif tool != '':
 else:
     pattern = '*.tfrecord'
 dataset = ds.Dataset(
-    ('/home/dyros/mc_ws/CollisionNet/data/'+ str(time_window) + '/validation_as_training'), 
-    num_data, time_window, buffer_size, batch_size, pattern = pattern, cycle_length = cycle_length
+    ('/home/dyros/mc_ws/CollisionNet/data/' + str(time_window) + '/training'), 
+    num_data, time_window, buffer_size, batch_size, pattern = pattern
 )
 
 # Validation data 
@@ -91,20 +97,21 @@ if tool != '':
 else:
     pattern = '*.tfrecord'
 validation_dataset = ds.Dataset(
-    ('/home/dyros/mc_ws/CollisionNet/data/' + str(time_window) + '/test'), 
+    ('/home/dyros/mc_ws/CollisionNet/data/' + str(time_window) + '/validation'), 
     num_data, time_window, 0, batch_size, pattern = pattern, num_parallel_calls = 3, processed = False, drop_remainder = False
 )
 
-def on_epoch_end(epoch, logs = None):
-    if wandb_use == True:
-        wandb_dict = dict()
-        wandb_dict['Training Accuracy'] = logs.get('acc')
-        wandb_dict['Validation Accuracy'] = logs.get('val_acc')
-        wandb_dict['Training Cost'] =  logs.get('loss')
-        wandb_dict['Validation Cost'] = logs.get('val_loss')
-        wandb.log(wandb_dict)
+class MetricsLog(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs = None):
+        if wandb_use == True:
+            wandb_dict = dict()
+            wandb_dict['Training Accuracy'] = logs.get('acc')
+            wandb_dict['Validation Accuracy'] = logs.get('val_acc')
+            wandb_dict['Training Cost'] =  logs.get('loss')
+            wandb_dict['Validation Cost'] = logs.get('val_loss')
+            wandb.log(wandb_dict)
 
-callbacks = [on_epoch_end]
+callbacks = [MetricsLog()]
 
 start_time = time.time()
 model.fit(x = dataset, epochs = training_epochs, callbacks = callbacks, validation_data = validation_dataset)
@@ -115,6 +122,3 @@ if run_name != '':
 if wandb_use == True:
     model.save(os.path.join(wandb.run.dir, (run_name + '.h5')))
     wandb.config.elapsed_time = elapsed_time
-
-print("Elapsed time: {:.2f}".format(elapsed_time))
-print('Learning finished!')
