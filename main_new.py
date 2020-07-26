@@ -53,7 +53,7 @@ model.compile(
         metrics = ['acc']
     )
 
-dataset = ds.Dataset('/home/dyros/mc_ws/CollisionNet/data_0_00kg/training', 49, 32, 20000, 100)
+dataset = ds.Dataset('/home/dyros/mc_ws/CollisionNet/data_0_00kg/training_new', 49, 32, 20000, 100, pattern = '*.tfrecord', processed = True)
 
 loss_object = tf.keras.losses.CategoricalCrossentropy()
 acc_tracker = tf.keras.metrics.CategoricalAccuracy()
@@ -64,7 +64,7 @@ for variable in model.trainable_variables:
 num_variables = len(batch_gradients)
 steps = 10
 step_count = None
-
+"""
 @tf.function
 def train():
     step_count = 0
@@ -82,11 +82,22 @@ def train():
             for i in range(num_variables):
                 batch_gradients[i].assign(tf.zeros_like(batch_gradients[i]))
         acc_tracker.update_state(y, y_pred)
+"""
+
+@tf.function
+def train():
+    for x, y in dataset:
+        with tf.GradientTape() as t:
+            y_pred = model(x, training = True)
+            loss = loss_object(y_true = y, y_pred = y_pred)
+        gradients = t.gradient(loss, model.trainable_variables)
+        model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        acc_tracker.update_state(y, y_pred)
 
 validation_dataset = ds.Dataset(
-    '/home/dyros/mc_ws/CollisionNet/data_0_00kg/validation', 49, 32, 0, 100, num_parallel_calls = 3, processed = False, drop_remainder = False)
+    '/home/dyros/mc_ws/CollisionNet/data/32/validation', 49, 32, 0, 100, pattern = '*0_00kg.tfrecord', num_parallel_calls = 3, processed = False, drop_remainder = False)
 
-for i in range(5):
+for i in range(1):
     print("Epoch {}".format(i + 1))
     start_time = time.time()
     train()
