@@ -5,6 +5,7 @@ import os
 _num_data = 1
 _num_time_window = 1
 
+@tf.function
 def parse1(example_proto):
     feature_description = {
         'x': tf.io.FixedLenFeature(shape = (_num_data,), dtype = tf.float32),
@@ -12,6 +13,7 @@ def parse1(example_proto):
     }
     return tf.io.parse_single_example(example_proto, feature_description)
 
+@tf.function
 def parse2(example_proto):
     feature_description = {
         'x': tf.io.FixedLenFeature(shape = [], dtype = tf.string),
@@ -19,6 +21,7 @@ def parse2(example_proto):
     }
     return tf.io.parse_single_example(example_proto, feature_description)    
 
+@tf.function
 def process1(filename):
     dataset = tf.data.TFRecordDataset([filename])
     dataset = dataset.map(parse1).prefetch(1)
@@ -34,6 +37,7 @@ def process1(filename):
 
     return dataset
 
+@tf.function
 def process2(filename):
     dataset = tf.data.TFRecordDataset([filename])
     dataset = dataset.map(parse2).prefetch(1)
