@@ -2,51 +2,11 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import network as nn
 import dataset as ds
 from pathlib import Path
+import metrics
 import argparse
-
-
-class FalsePositives(tf.keras.metrics.Metric):
-    def __init__(self, thresholds = 0.5, name = 'false_positives', **kwargs):
-        super(FalsePositives, self).__init__(name = name, **kwargs)
-        self.false_positives = self.add_weight(name = 'fp', initializer = 'zeros')
-        self.thresholds = thresholds
-
-    def update_state(self, y_true, y_pred, sample_weight = None):
-        y_true = tf.cast(y_true[:, 0], tf.bool)
-        y_pred = tf.math.greater_equal(y_pred[:, 0], self.thresholds)
-        values = tf.logical_and(tf.equal(y_true, False), tf.equal(y_pred, True))
-        values = tf.cast(values, self.dtype)
-        if sample_weight is not None:
-            sample_weight = tf.cast(sample_weight, self.dtype)
-            sample_weight = tf.broadcast_weights(sample_weight, values)
-            values = tf.math.multiply(values, sample_weight)
-        self.false_positives.assign_add(tf.reduce_sum(values))
-
-    def result(self):
-        return self.false_positives
-
-
-class FalseNegatives(tf.keras.metrics.Metric):
-    def __init__(self, thresholds = 0.5, name = 'false_negatives', **kwargs):
-        super(FalseNegatives, self).__init__(name = name, **kwargs)
-        self.false_negatives = self.add_weight(name = 'fn', initializer = 'zeros')
-        self.thresholds = thresholds
-
-    def update_state(self, y_true, y_pred, sample_weight = None):
-        y_true = tf.cast(y_true[:, 0], tf.bool)
-        y_pred = tf.math.greater_equal(y_pred[:, 0], self.thresholds)
-        values = tf.logical_and(tf.equal(y_true, True), tf.equal(y_pred, False))
-        values = tf.cast(values, self.dtype)
-        if sample_weight is not None:
-            sample_weight = tf.cast(sample_weight, self.dtype)
-            sample_weight = tf.broadcast_weights(sample_weight, values)
-            values = tf.math.multiply(values, sample_weight)
-        self.false_negatives.assign_add(tf.reduce_sum(values))
-
-    def result(self):
-        return self.false_negatives
 
 
 parser = argparse.ArgumentParser()
@@ -73,13 +33,15 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-model = tf.keras.models.load_model(('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5'), compile = False)
+#model = tf.keras.models.load_model(('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5'), compile = False)
+model = nn.CollisionNet(49, 31, 0, compile = False)
+model.load_weights('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5')
 model.compile(
     loss = 'categorical_crossentropy', 
     metrics = [
         tf.keras.metrics.CategoricalAccuracy(), 
-        FalsePositives(), 
-        FalseNegatives(),
+        metrics.FalsePositives(), 
+        metrics.FalseNegatives(),
         ])
 
 log_file = open('/home/dyros/mc_ws/CollisionNet/analysis/' + name + '_on_' + dataset_type + '.txt', 'w')
