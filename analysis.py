@@ -34,7 +34,7 @@ if gpus:
         print(e)
 
 #model = tf.keras.models.load_model(('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5'), compile = False)
-model = nn.CollisionNet(49, 31, 0, compile = False)
+model = nn.CollisionNet(49, 31, compile = False)
 model.load_weights('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5')
 model.compile(
     loss = 'categorical_crossentropy', 

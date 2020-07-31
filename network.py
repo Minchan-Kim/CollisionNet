@@ -45,8 +45,10 @@ class SequentialWithGradAccum(tf.keras.models.Sequential):
         return {metric.name: metric.result() for metric in self.metrics}
 
 
-def CollisionNet(num_data, time_window, learning_rate, batch_size = None, minibatch_size = None):
-    if (batch_size is not None) and (minibatch_size is not None):
+def CollisionNet(num_data, time_window, **kwargs):
+    batch_size = kwargs.get('batch_size')
+    minibatch_size = kwargs.get('minibatch_size')
+    if ((batch_size is not None) and (minibatch_size is not None)):
         model = SequentialWithGradAccum(batch_size, minibatch_size)
     else:
         model = tf.keras.models.Sequential()
@@ -72,13 +74,24 @@ def CollisionNet(num_data, time_window, learning_rate, batch_size = None, miniba
     model.add(tf.keras.layers.Conv1D(512, 3, padding = 'valid', dilation_rate = 8))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
+    # model.add(tf.keras.layers.Conv1D(512, 2, padding = 'same'))
+    # model.add(tf.keras.layers.BatchNormalization())
+    # model.add(tf.keras.layers.ReLU())
+    # model.add(tf.keras.layers.Conv1D(512, 2, padding = 'valid', dilation_rate = 16))
+    # model.add(tf.keras.layers.BatchNormalization())
+    # model.add(tf.keras.layers.ReLU())
     model.add(tf.keras.layers.Flatten())
     model.add(tf.keras.layers.Dense(2, activation = 'softmax'))
-    model.compile(
-        optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate),
-        loss = 'categorical_crossentropy',
-        metrics = ['acc']
-    )
+    if kwargs.get('compile', True):
+        learning_rate = kwargs.get('learning_rate', 0.001)
+        beta_1 = kwargs.get('beta_1', 0.9)
+        beta_2 = kwargs.get('beta_2', 0.999)
+        epsilon = kwargs.get('epsilon', 1e-7)
+        model.compile(
+            optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate, beta_1 = beta_1, beta_2 = beta_2, epsilon = epsilon),
+            loss = 'categorical_crossentropy',
+            metrics = ['acc']
+        )
     if (batch_size is not None) and (minibatch_size is not None):
         model.initialize_batch_gradients()
 
@@ -86,5 +99,5 @@ def CollisionNet(num_data, time_window, learning_rate, batch_size = None, miniba
 
 
 if __name__ == '__main__':
-    model = CollisionNet(49, 31, 0.0001, 1000, 100)
+    model = CollisionNet(49, 32, 0.0001, 1000, 100)
     model.summary()
