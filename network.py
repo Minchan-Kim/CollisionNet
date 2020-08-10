@@ -29,7 +29,7 @@ class SequentialWithGradAccum(tf.keras.models.Sequential):
         x, y = dataset
         with tf.GradientTape() as tape:
             y_pred = self(x, training = True)
-            loss = self.compiled_loss(y, y_pred)
+            loss = self.compiled_loss(y, y_pred, regularization_losses = self.losses)
         gradients = tape.gradient(loss, self.trainable_variables)
         if tf.math.equal(self.step_count, 0):
             tf.py_function(self.assign_gradients, gradients, [])
