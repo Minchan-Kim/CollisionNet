@@ -48,40 +48,46 @@ class SequentialWithGradAccum(tf.keras.models.Sequential):
 def CollisionNet(num_data, time_window, **kwargs):
     batch_size = kwargs.get('batch_size')
     minibatch_size = kwargs.get('minibatch_size')
+    bias_initializer = kwargs.get('bias_initializer', 'zeros')
     if ((batch_size is not None) and (minibatch_size is not None)):
         model = SequentialWithGradAccum(batch_size, minibatch_size)
     else:
         model = tf.keras.models.Sequential()
+    if time_window == 32:
+        kernel_size = 2
+    else:
+        kernel_size = 3
     model.add(tf.keras.layers.InputLayer(input_shape = (time_window, num_data)))
-    model.add(tf.keras.layers.Conv1D(128, 3, padding = 'valid'))
+    model.add(tf.keras.layers.Conv1D(128, kernel_size, padding = 'valid', bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Conv1D(128, 3, padding = 'same'))
+    model.add(tf.keras.layers.Conv1D(128, kernel_size, padding = 'same', bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Conv1D(128, 3, padding = 'valid', dilation_rate = 2))
+    model.add(tf.keras.layers.Conv1D(128, kernel_size, padding = 'valid', dilation_rate = 2, bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Conv1D(128, 3, padding = 'same'))
+    model.add(tf.keras.layers.Conv1D(128, kernel_size, padding = 'same', bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Conv1D(256, 3, padding = 'valid', dilation_rate = 4))
+    model.add(tf.keras.layers.Conv1D(256, kernel_size, padding = 'valid', dilation_rate = 4, bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Conv1D(256, 3, padding = 'same'))
+    model.add(tf.keras.layers.Conv1D(256, kernel_size, padding = 'same', bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Conv1D(512, 3, padding = 'valid', dilation_rate = 8))
+    model.add(tf.keras.layers.Conv1D(512, kernel_size, padding = 'valid', dilation_rate = 8, bias_initializer = bias_initializer))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.ReLU())
-    # model.add(tf.keras.layers.Conv1D(512, 2, padding = 'same'))
-    # model.add(tf.keras.layers.BatchNormalization())
-    # model.add(tf.keras.layers.ReLU())
-    # model.add(tf.keras.layers.Conv1D(512, 2, padding = 'valid', dilation_rate = 16))
-    # model.add(tf.keras.layers.BatchNormalization())
-    # model.add(tf.keras.layers.ReLU())
+    if time_window == 32:
+        model.add(tf.keras.layers.Conv1D(512, kernel_size, padding = 'same'))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.ReLU())
+        model.add(tf.keras.layers.Conv1D(512, kernel_size, padding = 'valid', dilation_rate = 16))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.ReLU())
     model.add(tf.keras.layers.Flatten())
-    model.add(tf.keras.layers.Dense(2, activation = 'softmax'))
+    model.add(tf.keras.layers.Dense(2, activation = 'softmax', bias_initializer = bias_initializer))
     if kwargs.get('compile', True):
         learning_rate = kwargs.get('learning_rate', 0.001)
         beta_1 = kwargs.get('beta_1', 0.9)
@@ -99,5 +105,5 @@ def CollisionNet(num_data, time_window, **kwargs):
 
 
 if __name__ == '__main__':
-    model = CollisionNet(49, 32, 0.0001, 1000, 100)
+    model = CollisionNet(49, 31, learning_rate = 0.0001, batch_size = 1000, minibatch_size = 100)
     model.summary()

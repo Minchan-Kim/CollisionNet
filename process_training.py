@@ -64,17 +64,3 @@ if dtype is not None:
 for path in paths:
     nr.Normalize(path, dest, write, time_window, 100, tools, dtype)
     print(str(path))
-
-"""
-dir1 = [x for x in p1.iterdir() if (x.is_dir() and ('robot1' in x.name))]
-for p2 in dir1:
-    dir2 = [x for x in p2.iterdir() if (x.is_dir() and (('collision' in x.name) or ('free' in x.name)))]
-    for p3 in dir2:
-        dir3 = [x for x in p3.iterdir() if x.is_dir() and x.name == '0_00kg']
-        for p4 in dir3:
-            dir4 = [x for x in p4.iterdir() if x.is_dir()]
-            for p5 in dir4:
-                for x in p5.iterdir():
-                    if x.name == 'Reduced_DRCL_Data.txt':
-                        paths.append(x)
-"""

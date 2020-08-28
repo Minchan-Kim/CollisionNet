@@ -54,15 +54,3 @@ if dtype is not None:
 for path in paths:
     nr.Normalize(path, dest, write, time_window, 1000, tools, dtype)
     print(str(path))
-
-"""
-p1 = Path('/home/dyros/mc_ws/Offline_Experiment/20191122_Test/robot1')
-paths = []
-dir1 = [x for x in p1.iterdir() if (x.is_dir() and (x.name in Tool_list))]
-for p2 in dir1:
-    dir2 = [x for x in p2.iterdir() if (x.is_dir() and (x.name in Data_type_list))]
-    for p3 in dir2:
-        for x in p3.iterdir():
-            if x.match('DRCL_Data.txt*'):
-                paths.append(x)
-"""

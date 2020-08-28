@@ -9,6 +9,35 @@ import time
 import sys
 
 
+class MetricsLog(tf.keras.callbacks.Callback):
+    def __init__(self, wandb, **kwargs):
+        super(MetricsLog, self).__init__()
+        self.wandb = wandb
+        self.max_val_acc = 0.0
+        self.min_val_loss = 0.0
+        self.use_wandb = kwargs.get('use_wandb', False)
+        self.early_stopping = kwargs.get('early_stopping', '')
+        self.name = kwargs.get('run_name')
+        self.filename = '/home/dyros/mc_ws/CollisionNet/model/' + run_name + '.h5'
+
+    def on_epoch_end(self, epoch, logs = None):
+        if use_wandb == True:
+            wandb_dict = dict()
+            wandb_dict['Training Accuracy'] = logs.get('acc')
+            wandb_dict['Validation Accuracy'] = logs.get('val_acc')
+            wandb_dict['Training Cost'] =  logs.get('loss')
+            wandb_dict['Validation Cost'] = logs.get('val_loss')
+            self.wandb.log(wandb_dict)
+        if (early_stopping == 'acc') and (run_name != ''):
+            if (epoch == 0) or (logs.get('val_acc') > self.max_val_acc):
+                model.save_weights(self.filename)
+                self.min_val_loss = logs.get('val_acc')
+        elif (early_stopping == 'loss') and (run_name != ''):
+            if (epoch == 0) or (logs.get('val_loss') < self.min_val_loss):
+                model.save_weights(self.filename)
+                self.min_val_loss = logs.get('val_loss')
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-profile', action = 'store_true')
 parser.add_argument('-use_cpu', action = 'store_false')
@@ -20,7 +49,7 @@ parser.add_argument('--training_epoch', type = int, default = 100)
 parser.add_argument('--buffer_size', type = int, default = 20000)
 parser.add_argument('--batch_size', type = int, default = 100)
 parser.add_argument('--minibatch_size', type = int, default = 0)
-parser.add_argument('-early_stopping', action = 'store_true')
+parser.add_argument('--early_stopping', type = str, default = '')
 parser.add_argument('-schedule', action = 'store_true')
 parser.add_argument('--learning_rate', type = float, default = 0.001)
 parser.add_argument('--beta_1', type = float, default = 0.9)
@@ -95,6 +124,7 @@ if use_schedule:
 if minibatch_size > 0:
     model = nn.CollisionNet(
         num_data, time_window, 
+        bias_initializer = 'glorot_uniform',
         learning_rate = learning_rate, 
         beta_1 = beta_1, 
         beta_2 = beta_2, 
@@ -106,6 +136,7 @@ if minibatch_size > 0:
 else:
     model = nn.CollisionNet(
         num_data, time_window, 
+        bias_initializer = 'glorot_uniform',
         learning_rate = learning_rate,
         beta_1 = beta_1,
         beta_2 = beta_2,
@@ -136,25 +167,7 @@ validation_dataset = ds.Dataset(
     num_data, time_window, 0, batch_size, pattern = pattern, num_parallel_calls = 3, processed = False, drop_remainder = False
 )
 
-class MetricsLog(tf.keras.callbacks.Callback):
-    def __init__(self):
-        super(MetricsLog, self).__init__()
-        self.min_val_loss = 0.0
-
-    def on_epoch_end(self, epoch, logs = None):
-        if use_wandb == True:
-            wandb_dict = dict()
-            wandb_dict['Training Accuracy'] = logs.get('acc')
-            wandb_dict['Validation Accuracy'] = logs.get('val_acc')
-            wandb_dict['Training Cost'] =  logs.get('loss')
-            wandb_dict['Validation Cost'] = logs.get('val_loss')
-            wandb.log(wandb_dict)
-        if (early_stopping == True) and (run_name != ''):
-            if (epoch == 0) or (logs.get('val_loss') < self.min_val_loss):
-                model.save_weights('/home/dyros/mc_ws/CollisionNet/model/' + run_name + '.h5')
-                self.min_val_loss = logs.get('val_loss')
-
-callbacks = [MetricsLog()]
+callbacks = [MetricsLog(wandb, use_wandb = use_wandb, run_name = run_name, early_stopping = early_stopping)]
 
 start_time = time.time()
 model.fit(x = dataset, epochs = training_epochs, callbacks = callbacks, validation_data = validation_dataset)

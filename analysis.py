@@ -34,7 +34,7 @@ if gpus:
         print(e)
 
 #model = tf.keras.models.load_model(('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5'), compile = False)
-model = nn.CollisionNet(49, 31, compile = False)
+model = nn.CollisionNet(49, time_window, compile = False)
 model.load_weights('/home/dyros/mc_ws/CollisionNet/model/' + name + '.h5')
 model.compile(
     loss = 'categorical_crossentropy', 
@@ -68,7 +68,7 @@ predictions = model.predict(dataset)
 
 false_positives = int(result[2])
 false_negatives = int(result[3])
-line = 'Accuracy: {:.2}'.format(result[1])
+line = 'Accuracy: {:.3}'.format(result[1])
 print(line)
 log_file.write(line + '\n')
 line = 'False positives: {}'.format(false_positives)
